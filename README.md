@@ -16,6 +16,15 @@
   - 시험장에서 유형을 구분하는 방법
   - 각 유형별 Python 템플릿
 
+## 문제별 핵심 패턴
+
+- [LeetCode 416 - Partition Equal Subset Sum](memoization_416.md)
+  - 상태: `index + current_sum`
+  - 선택 / 비선택 분기
+  - 단순 재귀의 `O(2^n)` 구조
+  - 중복 상태와 메모이제이션
+  - 메모이제이션 후 `O(n * target)`
+
 ## 기존 연습 코드
 
 - `baek10870_fibo.c` — Fibonacci
