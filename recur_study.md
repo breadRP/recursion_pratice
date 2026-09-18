@@ -189,6 +189,36 @@ result1 + result2
 result1 or result2
 ```
 
+### Boolean 분기에서는 short-circuit도 확인
+
+`or` / `and`로 재귀 결과를 합칠 때는 Python의 **short-circuit evaluation(단락 평가)** 을 활용할 수 있다.
+
+```python
+# 두 호출을 모두 먼저 실행함
+a = recur(choice_a)
+b = recur(choice_b)
+return a or b
+```
+
+위 코드는 `a`가 이미 `True`여도 `b = recur(...)`까지 실행한다.
+
+반면:
+
+```python
+return recur(choice_a) or recur(choice_b)
+```
+
+는 첫 번째 호출이 `True`면 두 번째 호출을 아예 하지 않는다.
+
+```text
+A or B  -> A가 True면 B를 평가하지 않음
+A and B -> A가 False면 B를 평가하지 않음
+```
+
+특히 분기형 재귀에서는 이 차이로 불필요한 분기를 줄일 수 있다.
+
+> 중요한 점: "변수를 안 만들면 빠르다"가 아니라, **함수 호출을 먼저 끝내버리지 않고 `or` / `and`가 다음 호출 여부를 결정하게 하는 것**이 핵심이다.
+
 ## 템플릿
 
 ```python
