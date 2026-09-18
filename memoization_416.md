@@ -64,10 +64,11 @@ target을 만들 수 있는가?
 그래서 재귀도 두 갈래로 분기된다.
 
 ```python
-select = recur(index + 1, current_sum + nums[index])
-skip = recur(index + 1, current_sum)
-
-return select or skip
+return (
+    recur(index + 1, current_sum + nums[index])
+    or
+    recur(index + 1, current_sum)
+)
 ```
 
 이 문제는 둘 중 하나라도 `target`을 만들 수 있으면 성공이므로 `or`로 결과를 합친다.
@@ -169,12 +170,44 @@ def recur(index, current_sum):
     if state in memo:
         return memo[state]
 
-    select = recur(index + 1, current_sum + nums[index])
-    skip = recur(index + 1, current_sum)
-
-    memo[state] = select or skip
+    memo[state] = (
+        recur(index + 1, current_sum + nums[index])
+        or
+        recur(index + 1, current_sum)
+    )
     return memo[state]
 ```
+
+여기서 두 재귀 호출을 따로 변수에 먼저 저장하지 않고 `or` 안에 직접 넣은 이유도 중요하다.
+
+```python
+select = recur(...)
+skip = recur(...)
+return select or skip
+```
+
+처럼 쓰면 Python은 `select`를 계산한 뒤 `skip`도 **무조건 먼저 계산**한다.  
+즉 `select == True`여도 두 번째 재귀 호출까지 이미 실행된 상태다.
+
+반면:
+
+```python
+return recur(...) or recur(...)
+```
+
+처럼 쓰면 Python의 **short-circuit evaluation(단락 평가)** 이 적용된다.
+
+```text
+첫 번째 recur(...)가 True
+-> 전체 결과는 이미 True
+-> 두 번째 recur(...)는 호출하지 않음
+
+첫 번째 recur(...)가 False
+-> 두 번째 recur(...)를 호출해서 확인
+```
+
+따라서 재귀에서 `or` / `and`를 사용할 때는 단순히 코드 한 줄을 줄이는 문제가 아니라,
+**불필요한 재귀 분기를 실제로 탐색하지 않게 만들 수 있다.**
 
 핵심 구조는:
 
@@ -188,7 +221,49 @@ NO  -> 계산하고 저장
 
 ---
 
-# 8. 시간복잡도가 왜 줄어드는가?
+# 8. Boolean 재귀에서 `or` short-circuit
+
+416처럼 "둘 중 하나만 성공하면 되는" 문제에서는 `or`의 평가 방식도 성능에 영향을 줄 수 있다.
+
+예를 들어:
+
+```python
+select = recur(select_state)
+skip = recur(skip_state)
+
+result = select or skip
+```
+
+이 코드는 `select`와 `skip`을 모두 먼저 계산한다.
+
+하지만:
+
+```python
+result = recur(select_state) or recur(skip_state)
+```
+
+는 첫 번째 호출이 `True`를 반환하면 두 번째 호출을 생략한다.
+
+즉:
+
+```text
+A or B
+-> A가 True면 B는 평가하지 않음
+
+A and B
+-> A가 False면 B는 평가하지 않음
+```
+
+이를 **short-circuit evaluation**이라고 한다.
+
+주의할 점:
+
+> "변수를 만들면 느리다"가 핵심이 아니다.  
+> **함수 호출을 변수에 저장하려고 먼저 실행해버리면, `or`가 두 번째 호출을 생략할 기회를 잃는 것**이 핵심이다.
+
+---
+
+# 9. 시간복잡도가 왜 줄어드는가?
 
 메모이제이션을 하지 않으면 같은 상태를 여러 번 계산해서 `O(2^n)`까지 커질 수 있다.
 
@@ -228,7 +303,7 @@ O(n * target)
 
 ---
 
-# 9. 시험장에서 떠올릴 포인트
+# 10. 시험장에서 떠올릴 포인트
 
 분기 재귀를 만들었는데 시간복잡도가 `O(2^n)`처럼 커진다면 다음을 확인한다.
 
@@ -252,6 +327,7 @@ O(n * target)
 단순 재귀 = O(2^n)
 중복 상태 존재 = 메모이제이션
 메모이제이션 후 = O(n * target)
+Boolean 분기 = or / and short-circuit도 확인
 ```
 
 이다.
