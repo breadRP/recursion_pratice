@@ -342,7 +342,7 @@ return play(0, len(nums) - 1) >= 0
 -> 결과를 합침
 ```
 
-## 템플릿
+## 기본 반환형 템플릿
 
 ```python
 def dfs(node):
@@ -368,20 +368,74 @@ def depth(node):
     return max(left, right) + 1
 ```
 
+## 경로 상태를 들고 내려가는 DFS
+
+113 Path Sum II처럼 반환값을 합치는 대신 **현재 root→node 경로를 공유 상태로 들고 내려가는 문제**도 있다.
+
+```text
+현재 node 진입
+-> 현재 node를 total/path에 반영
+-> 왼쪽 DFS
+-> 오른쪽 DFS
+-> 현재 node를 path에서 제거
+```
+
+이 경우 DFS는 "어디를 탐색할지"를 정하고, backtracking은 "탐색 중 수정한 path를 어떻게 복구할지"를 담당한다.
+
+### 종료조건 위치가 항상 함수 맨 위인 것은 아니다
+
+113에서는 두 종류의 종료 판단이 있다.
+
+```text
+구조적 종료
+-> node is None
+-> 현재 node를 처리할 필요가 없으므로 바로 return
+
+의미적 종료
+-> 현재 node가 leaf
+-> 현재 node의 값까지 total/path에 반영한 뒤에야 정답 여부를 판단 가능
+```
+
+따라서 leaf 판정은 현재 node를 state에 반영한 뒤에 두는 것이 자연스럽다.
+
+```python
+def dfs(node, total):
+    if node is None:
+        return
+
+    total += node.val
+    path.append(node.val)
+
+    if node.left is None and node.right is None:
+        if total == target:
+            answer.append(path.copy())
+        path.pop()
+        return
+
+    dfs(node.left, total)
+    dfs(node.right, total)
+
+    path.pop()
+```
+
+leaf에서 직접 `return`하면 함수 맨 아래의 `path.pop()`까지 도달하지 않으므로, leaf branch 안에서 자기 `append()`에 대응하는 `pop()`을 수행해야 한다.
+
 시험장에서 떠올릴 질문:
 
-> 현재 노드의 답을 자식 서브트리의 답으로 만들 수 있는가?
+> 현재 노드의 답을 자식 서브트리의 반환값으로 만들 것인가, 아니면 현재 경로 state를 들고 내려갈 것인가?
 
 ---
 
 # 6. 백트래킹형 재귀
 
-핵심은 다음 순서다.
+백트래킹은 완전히 별개의 재귀 모양이라기보다, **분기 탐색 중 공유 상태를 바꾸고 다시 되돌리는 방식**으로 보는 것이 좋다.
+
+핵심은:
 
 ```text
-선택
--> 재귀
--> 선택 취소
+choose
+-> explore
+-> unchoose
 ```
 
 대표 예시
@@ -390,31 +444,105 @@ def depth(node):
 - 조합
 - 부분집합
 - N-Queen
-- 경로 탐색
+- 트리의 root→leaf 경로 탐색
+- 113 Path Sum II
 
-공유 리스트를 사용한다면 한 분기 탐색 후 반드시 원래 상태로 되돌려야 한다.
+## 핵심 규칙: append와 pop은 한 쌍
 
-## 템플릿
+공유 리스트 `path`를 사용한다면:
 
 ```python
-def backtrack(...):
-    if 완성조건:
-        answer.append(path.copy())
+path.append(choice)   # choose
+backtrack(...)        # explore
+path.pop()            # unchoose
+```
+
+처럼 **내가 만든 상태 변경은 그 선택의 탐색이 끝난 직후 원상복구**한다.
+
+중요한 것은 "항상 모든 재귀 호출 뒤에 pop"이 아니라:
+
+> **이 append가 대표하는 선택의 범위가 끝나는 지점에서 pop한다.**
+
+예를 들어 현재 tree node가 왼쪽과 오른쪽 두 경로의 공통 prefix라면:
+
+```python
+path.append(node.val)
+
+dfs(node.left)
+dfs(node.right)
+
+path.pop()
+```
+
+처럼 왼쪽과 오른쪽을 모두 탐색한 뒤 현재 node를 pop한다.
+
+## 113 Path Sum II에서의 구조
+
+```python
+def dfs(node, total):
+    if node is None:
         return
 
-    for choice in 가능한_선택:
-        path.append(choice)
+    total += node.val
+    path.append(node.val)
 
-        backtrack(...)
-
+    if node.left is None and node.right is None:
+        if total == targetSum:
+            result.append(path.copy())
         path.pop()
+        return
+
+    dfs(node.left, total)
+    dfs(node.right, total)
+
+    path.pop()
 ```
+
+### 왜 `path.copy()`인가?
+
+`path`는 모든 재귀 호출이 공유하는 mutable list다.
+
+```python
+result.append(path)
+```
+
+는 현재 내용을 복사하는 것이 아니라 **같은 list 객체의 reference**를 저장한다.
+이후 `path.pop()`이 실행되면 이미 저장한 결과도 같이 바뀔 수 있다.
+
+따라서 정답 경로는:
+
+```python
+result.append(path.copy())
+```
+
+처럼 snapshot을 저장한다.
+
+## DFS와 Backtracking의 관계
+
+```text
+DFS
+-> 어느 방향으로 탐색할 것인가
+-> 한 경로를 깊게 내려감
+
+Backtracking
+-> 탐색하면서 바꾼 공유 state를
+   부모 상태로 돌아올 때 복구
+```
+
+따라서 113은:
+
+```text
+Tree DFS
++ 분기 재귀
++ path 상태 유지
++ Backtracking
+```
+
+으로 볼 수 있다.
 
 기억할 문장:
 
-```text
-choose -> explore -> unchoose
-```
+> **선택한다 → 그 선택으로 가능한 탐색을 끝낸다 → 선택을 취소한다.**
 
 ---
 
@@ -467,6 +595,12 @@ Divide -> Conquer -> Combine
 
 새로운 재귀 유형이라기보다는 **재귀 + 결과 저장**이다.
 
+메모이제이션의 핵심 조건은 "재귀인가?"가 아니라:
+
+> **같은 state를 여러 경로에서 반복 계산하는가?**
+
+이다.
+
 분기 재귀에서는 같은 상태가 여러 번 등장할 수 있다.
 
 ```text
@@ -509,6 +643,39 @@ def recur(left, right):
     memo[(left, right)] = result
 
     return result
+```
+
+## 일반 이진트리 DFS에서 memo가 보통 필요 없는 이유
+
+보통의 tree는 각 node의 부모가 하나이므로 root에서 특정 node로 가는 경로도 하나다.
+
+```text
+root
+├─ left subtree
+└─ right subtree
+```
+
+일반 DFS는 각 node를 한 번 방문하므로 동일한 `node` state를 다른 경로에서 다시 계산하는 일이 거의 없다.
+
+따라서:
+
+```text
+일반 Binary Tree DFS
+-> overlapping subproblem이 없음
+-> memo를 붙여도 다시 조회할 상태가 거의 없음
+-> 보통 O(n) 순회만으로 충분
+```
+
+113 Path Sum II도 각 node에 한 번씩 도달하므로 일반적으로 memoization이 필요하지 않다.
+
+단, "백트래킹이면 memo를 못 쓴다"는 뜻은 아니다. 서로 다른 선택 경로가 **동일한 state**로 합쳐지는 문제라면 backtracking/분기 재귀에도 memo를 사용할 수 있다.
+
+시험용 판단:
+
+```text
+같은 state가 실제로 반복되는가?
+YES -> memo 고려
+NO  -> memo 불필요
 ```
 
 ---
@@ -597,6 +764,9 @@ right = recur(...)
 - 선택지가 여러 개라면 모든 필요한 분기를 탐색하는가?
 - 같은 상태가 반복되면 memo가 필요한가?
 - mutable 객체를 공유한다면 복구가 필요한가?
+- append한 선택은 모든 return 경로에서 대응하는 pop으로 복구되는가?
+- 정답에 mutable path를 저장한다면 snapshot(`path.copy()`)이 필요한가?
+- 의미적 종료조건을 검사하기 전에 현재 state를 먼저 반영해야 하는가?
 ```
 
 ---
