@@ -18,6 +18,13 @@
 
 ## 문제별 핵심 패턴
 
+- [LeetCode 113 - Path Sum II](backtracking_113.md)
+  - Tree DFS + Backtracking
+  - append → left/right 탐색 → pop
+  - leaf 판정 전 현재 node state 반영
+  - `path.copy()`로 정답 snapshot 저장
+  - 일반 tree DFS에서 memoization이 보통 불필요한 이유
+
 - [LeetCode 416 - Partition Equal Subset Sum](memoization_416.md)
   - 상태: `index + current_sum`
   - 선택 / 비선택 분기
