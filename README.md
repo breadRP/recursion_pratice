@@ -5,6 +5,8 @@
 ## 재귀 핵심 정리
 
 - [Recursion Thinking Guide](recur_study.md)
+  - **순회별 확보 정보 → Body의 수행 시점 → Return으로 부모에게 전달할 정보**
+  - 112 / 113 / 543을 Input·Body·Return 관점에서 비교
   - 재귀 문제를 볼 때 먼저 정할 4가지: 함수 의미 / 상태 / 종료조건 / 재귀식
   - 단순 감소형
   - 분기형
