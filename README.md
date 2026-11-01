@@ -25,6 +25,12 @@
   - `path.copy()`로 정답 snapshot 저장
   - 일반 tree DFS에서 memoization이 보통 불필요한 이유
 
+- [LeetCode 543 - Diameter of Binary Tree](postorder_543.md)
+  - 후위순회: 자식의 높이를 먼저 계산하고 부모에게 반환
+  - 현재 노드를 통과하는 지름 후보와 반환 높이 구분
+  - `left + right`로 최대 지름 갱신, `max(left, right) + 1` 반환
+  - 간선 수와 노드 수 차이, `self` / `nonlocal` 주의
+
 - [LeetCode 416 - Partition Equal Subset Sum](memoization_416.md)
   - 상태: `index + current_sum`
   - 선택 / 비선택 분기
