@@ -5,6 +5,106 @@
 
 ---
 
+# 재귀의 정보 흐름 — 순회 시점 / Body / Return
+
+> **핵심 Insight: 각 순회 위치에서는 확보한 정보가 다르다. Body는 그 시점에 가진 정보로 할 작업을 수행하고, Return은 호출한 부모에게 필요한 정보를 전달한다.**
+
+## 1. 실행 위치별로 무엇을 알고 있나?
+
+```python
+def dfs(node, state):
+    if node is None:
+        return base_value
+
+    # ① 전위 위치: 현재 node와 부모에게서 받은 state를 알고 있음
+    left = dfs(node.left, next_state)
+
+    # ② 중위 위치: 현재 정보 + 왼쪽 호출 결과 left를 알고 있음
+    right = dfs(node.right, next_state)
+
+    # ③ 후위 위치: 현재 정보 + 양쪽 호출 결과 left, right를 알고 있음
+    return combine(left, right)
+```
+
+| 위치 | 현재 확보한 정보 | 아직 확보되지 않은 정보 | 대표 용법 |
+|---|---|---|---|
+| 전위 (Preorder) | 현재 노드, 부모가 넘긴 인자, 지금까지의 경로/누적 상태 | 양쪽 자식의 계산 결과 | 경로·깊이·합을 갱신해 자식에게 전달 |
+| 중위 (Inorder) | 현재 정보 + 왼쪽 호출 결과 | 오른쪽 호출 결과 | BST에서 순서대로 처리, 왼쪽 처리 후 현재 노드 방문 |
+| 후위 (Postorder) | 현재 정보 + 왼쪽·오른쪽 호출 결과 | 없음 (두 자식의 결과가 모두 준비됨) | 높이·서브트리 크기·지름 후보처럼 자식 결과 결합 |
+
+이는 **각 시점에 실행 가능한 Body가 달라지는 이유**다. 함수의 실제 반환 타입은 전위/중위/후위라는 이름만으로 결정되지 않는다.
+
+## 2. Input → Body → Return
+
+```text
+Input  = 부모에게서 받은 정보 (node, 현재까지의 합, 경로 등)
+Body   = 현재 시점까지 확보한 정보로 할 일 (상태 갱신, 판정, 답 기록 등)
+Return = 호출을 종료하며 부모에게 전달하는 정보 (Boolean, 높이, 합 등)
+```
+
+- `return`은 호출 종료 자체에도 사용할 수 있다. 정보를 반환하지 않는 `return`도 있다.
+- `return` 식 안에서 계산할 수 있고, Body가 반환할 값을 미리 계산할 수도 있다. 둘은 문법적 분리가 아니라 **역할을 분리해 생각하는 사고 도구**다.
+- 자식에게 전달할 Input과 부모에게 돌려줄 Return은 방향이 반대다.
+- 전체 정답을 별도로 기록한다면 Return과 최종 답의 의미가 달라도 된다.
+
+## 3. 세 문제를 같은 관점으로 비교
+
+| 문제 | Input / 내려가는 정보 | Body / 수행 시점 | Return / 올라가는 정보 |
+|---|---|---|---|
+| 112 Path Sum | 현재 노드, 남은 합 | 전위에서 합을 줄이고 leaf에서 판단, 자식 Boolean을 후위에서 OR | 경로 존재 여부 Boolean |
+| [113 Path Sum II](backtracking_113.md) | 현재 노드, 누적 합, 공유 path | 전위에서 append, leaf에서 경로 저장, 자식 탐색 뒤 pop | 현재 호출 종료 (별도 값 없음) |
+| [543 Diameter](postorder_543.md) | 현재 노드 | 후위에서 left+right로 전체 지름 갱신 | 해당 노드의 높이 |
+
+### 112: Leaf가 판단한 Boolean을 위에서 결합
+
+```python
+def dfs(node, remain):
+    if node is None:
+        return False
+    remain -= node.val                 # 전위: 현재 합 정보 갱신
+    if node.left is None and node.right is None:
+        return remain == 0            # leaf: Boolean 생성
+    return dfs(node.left, remain) or dfs(node.right, remain)
+```
+
+부모는 자식 Boolean을 OR로 결합해 반환한다. OR 단락 평가가 일어나면 왼쪽이 True인 경우 오른쪽은 방문하지 않을 수 있다.
+
+### 113: 내려가며 공유 상태 갱신, 돌아오며 복구
+
+```text
+전위: path.append(node.val)
+자식 탐색: left / right DFS
+복귀 후: path.pop()
+정답: leaf에서 path.copy() 저장
+return: 특별한 값 전달 없이 호출 종료
+```
+
+### 543: 자식 결과를 받은 후 답 갱신과 부모용 반환을 분리
+
+```python
+left = dfs(node.left)
+right = dfs(node.right)
+best = max(best, left + right)  # 후위 Body: 현재 노드 지름 후보 기록
+return max(left, right) + 1    # 부모에게 필요한 높이
+```
+
+여기서 `best`는 최종 정답이고, `return`은 부모가 계산할 때 필요한 정보다. **지름을 그대로 부모에게 높이처럼 반환하면 안 된다.**
+
+## 4. 새 문제에서 적용할 순서
+
+```text
+1. 현재 함수가 부모에게 무엇을 return해야 하는지 정의한다.
+2. 그 값을 계산하려면 어떤 정보가 필요한지 확인한다.
+3. 해당 정보가 준비되는 위치(전위/중위/후위)에 Body를 배치한다.
+4. 부모에게서 받아 자식에게 내려보낼 Input이 필요한지 정한다.
+5. 최종 정답이 return과 다르면 따로 저장·갱신한다.
+6. 종료조건에서도 같은 Return 의미가 유지되는지 검사한다.
+```
+
+**한 줄 회독:** *전위는 자식 결과를 모르는 상태, 중위는 왼쪽 결과까지 아는 상태, 후위는 양쪽 결과를 아는 상태. 그때 할 일은 Body, 부모에게 줄 정보는 Return.*
+
+---
+
 # 1. 재귀 문제를 보면 가장 먼저 생각할 4가지
 
 코드를 쓰기 전에 아래 4줄부터 정리한다.
