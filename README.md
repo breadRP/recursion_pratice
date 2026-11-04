@@ -4,6 +4,12 @@
 
 ## 재귀 핵심 정리
 
+- [재귀 문제 설계 사고법 · 훈련 가이드](recursive_design_practice.md)
+  - 문제 관찰 → 함수 계약 → 정보 흐름 → 처리 시점 → 반례 검증
+  - 15분 설계 연습, 힌트 요청 방식, 3회독 복습법
+  - 543 / 236 / 105 / 98 / 113을 통한 구조 비교와 고정 사고 방지
+
+
 - [Recursion Thinking Guide](recur_study.md)
   - **순회별 확보 정보 → Body의 수행 시점 → Return으로 부모에게 전달할 정보**
   - 112 / 113 / 543을 Input·Body·Return 관점에서 비교
