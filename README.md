@@ -26,6 +26,11 @@
 
 ## 문제별 핵심 패턴
 
+- [LeetCode 98 - Validate Binary Search Tree](bst_98.md)
+  - 조상 제약을 상한·하한으로 전달하고 현재 노드에서 검사
+  - Contract / Parameter / Body / Return과 초기 설계의 수정 과정
+
+
 - [LeetCode 113 - Path Sum II](backtracking_113.md)
   - Tree DFS + Backtracking
   - append → left/right 탐색 → pop
